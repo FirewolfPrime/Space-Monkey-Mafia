@@ -1,27 +1,34 @@
-// Fort Street Code
+// TODO: function for resetting orientation back to neutral after sample drop off
+// TODO: more effective search algorithm; current one is too fuel-consuming 
+// TODO: faster geyser escape algorithm
 
+//State flags
 #define ANALYSER    0
-#define GETTOSEARCH 1
+#define GETTOSEARCH 1 
 #define INITSEARCH  2
 #define DRILL       3
 #define RISE        4
 #define RETURN      5
-#define EVAC        6
-#define EVAC2       7
+#define EVAC        6 // Geyser escape 
+#define EVAC2       7 // Geyser escape: Phase 2; resets drone to neutral
+
+//Satellite direction: THESE ARE NOT STATE FLAGS 
+//For search algorithm 
 #define LEFT        9
 #define RIGHT       10
 #define UP          11
 #define DOWN        12
 
-float attothervector[3];
-float targetRate[3];
-int locationC;
-int direction;
-float distInt;
+
+int locationC; //State flag holder
+int direction; //Direction flag holder
+float distInt; 
 float position[3];
 bool isTop;
 
+//Tracks samples
 float concentrations[5];
+//Current slot filled
 int invIndex;
 
 void init()
@@ -37,13 +44,12 @@ void init()
 
     direction = LEFT;
 
+
     distInt = 0.16f;
     locationC = ANALYSER;
     isTop = true;
 }
-
-
-
+// For finding closer analyser
 int findClosestItem() {
     float myZRState[12];
     api.getMyZRState(myZRState);
@@ -56,11 +62,12 @@ int findClosestItem() {
     }
     return closestItem;
 }
+// Calculates distance between pos and satellite
 float getDistance (float pos[3]){
     float myZRState[12];
     ZeroRoboticsGame game = ZeroRoboticsGame::instance();
     api.getMyZRState(myZRState);
-    //Get Satellite Location
+    //Get Satellite Locatio
     float satLoc[] = {myZRState[0],myZRState[1],myZRState[2]};
     
     //Get resultant vector
@@ -148,6 +155,7 @@ bool drill() {
     }
     return false;
 }
+
 void search() {
     DEBUG(("INITSEARCH"));
     if(direction == LEFT) {
@@ -255,6 +263,7 @@ void loop(){
         locationC = EVAC2;
         DEBUG(("EVAC2"));
     }
+    
     if (locationC == EVAC2) {
         float attitude[] = {0.0f,0.0f,0.0f};
         api.setAttRateTarget(attitude);
@@ -263,6 +272,7 @@ void loop(){
             DEBUG(("RISE"));
         }
     }
+    //Right now ANALYSER jumps straight to GETTOSEARCH i.e is useless
     if (locationC == ANALYSER) {
         DEBUG(("ANALYSER"));
         locationC = GETTOSEARCH;
