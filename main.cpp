@@ -10,7 +10,8 @@
 #define RISE        4
 #define RETURN      5
 #define EVAC        6 // Geyser escape 
-#define EVAC2       7 // Geyser escape: Phase 2; resets drone to neutral
+#define EVAC2       7
+#define DESCEND     8// Geyser escape: Phase 2; resets drone to neutral
 
 //Satellite direction: THESE ARE NOT STATE FLAGS 
 //For search algorithm 
@@ -39,8 +40,9 @@ void init()
     
 
     position[0] = myZRState[0];
-    position[1] = myZRState[0];
-    position[2] = 0.36f;
+    position[1] = myZRState[1];
+    float tmpPos[] = {position[0],position[1]};
+    position[2] = 0.60f;
 
     direction = LEFT;
 
@@ -245,7 +247,7 @@ bool rise() {
     ZeroRoboticsGame game = ZeroRoboticsGame::instance();
     api.getMyZRState(myZRState);
     
-    position[2] = 0.30f;
+    position[2] = 0.20f;
     float attitude[] = {0.0f,0.0f,0.0f};
     api.setAttRateTarget(attitude);
     if(moveTo(position)) {
@@ -280,7 +282,7 @@ void loop(){
     if (locationC == RISE) {
         if(rise()) {
             locationC = GETTOSEARCH;
-            position[2] = 0.36f;
+            position[2] = 0.20f;
         }
     }
     if (locationC == RETURN) {
@@ -299,12 +301,21 @@ void loop(){
     if (locationC == GETTOSEARCH) {
         DEBUG(("GETTOSEARCH"));
         search();
-        
-        position[2] = 0.36f;
+        float tmpPos[] = {position[0],position[1]};
+        position[2] = 0.20f;
         locationC = INITSEARCH;
     }
     if(locationC == INITSEARCH) {
         DEBUG(("INITSEARCH"));
+        if(moveTo(position)){
+            locationC = DESCEND;
+            DEBUG(("DESCEND"));
+        }
+    }
+    if(locationC == DESCEND) {
+        DEBUG(("DESCEND"));
+        float tmpPos[] = {position[0],position[1]};
+        position[2] = game.getTerrainHeight(tmpPos)- 0.14f;
         if(moveTo(position)){
             locationC = DRILL;
             DEBUG(("DRILL"));
@@ -320,12 +331,12 @@ void loop(){
             }
         else if(gotSample == true) {
 
-            if(game.getNumSamplesHeld() >= 5) {
+            if(game.getNumSamplesHeld() >= 3) {
                 game.stopDrill();
                 locationC = RETURN;
             }
             
-            else if (game.getDrills(tmpPos) >= 3) {
+            else if (game.getDrills(tmpPos) > 2) {
                 game.stopDrill();
                 locationC = RISE;
             }
